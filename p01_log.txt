@@ -1,0 +1,11 @@
+Warning in install.packages :
+  package ‘gurobi’ is not available (for R version 4.0.1)
+Warning in install.packages :
+  package ‘gurobi’ is not available (for R version 4.0.1)
+Warning in install.packages :
+  package ‘gurobi’ is not available (for R version 4.0.1)
+Error in install.packages : type == "both" cannot be used with 'repos = NULL'
+
+The downloaded binary packages are in
+	/var/folders/5z/0szj8bbn4p94gmjj1w_d96q00000gn/T//RtmpZ4k3Zv/downloaded_packages
+Error in install.packages : Updating loaded packages
