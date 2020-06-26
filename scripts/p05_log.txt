@@ -1,0 +1,43 @@
+Optimize a model with 424088 rows, 320501 columns and 1235299 nonzeros
+Variable types: 15 continuous, 320486 integer (320486 binary)
+Coefficient statistics:
+  Matrix range     [6e-08, 1e+00]
+  Objective range  [3e-01, 1e+00]
+  Bounds range     [1e+00, 3e+04]
+  RHS range        [3e-01, 3e-01]
+Found heuristic solution: objective -0.0000000
+Presolve removed 170 rows and 173 columns
+Presolve time: 4.82s
+Presolved: 423918 rows, 320328 columns, 956203 nonzeros
+Variable types: 0 continuous, 320328 integer (320328 binary)
+Presolve removed 12 rows and 12 columns
+Presolved: 423906 rows, 320316 columns, 956173 nonzeros
+
+
+Root simplex log...
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0    6.1021241e+04   5.785383e+04   0.000000e+00      6s
+    4088    5.2370080e+04   1.171542e+05   0.000000e+00     10s
+   30666    4.2191618e+04   1.163933e+03   0.000000e+00     16s
+   31876    4.2188593e+04   1.750385e+03   0.000000e+00     21s
+   32626    4.2187318e+04   1.700062e+03   0.000000e+00     25s
+   33536    4.2186231e+04   7.066040e+02   0.000000e+00     30s
+   34017    4.2186143e+04   0.000000e+00   0.000000e+00     34s
+   34017    4.2186143e+04   0.000000e+00   0.000000e+00     34s
+
+Root relaxation: objective 4.218614e+04, 34017 iterations, 28.73 seconds
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+     0     0 42186.1434    0  207   -0.00000 42186.1434      -     -   35s
+H    0     0                    42179.610355 42186.1434  0.02%     -   35s
+
+Explored 1 nodes (34017 simplex iterations) in 36.01 seconds
+Thread count was 1 (of 8 available processors)
+
+Solution count 2: 42179.6 -0 
+
+Optimal solution found (tolerance 1.00e-01)
+Best objective 4.217961035522e+04, best bound 4.218614342363e+04, gap 0.0155%

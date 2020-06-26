@@ -197,7 +197,7 @@ plot(s_fish_gfw, col = cols)
 Assuming places fished have the least profit, gap fill with minimum value:
 
 ```{r}
-r_fish_gfw.profit           <- raster(s_fish_gfw, "mean_scaled_profits") %>% 
+r_fish_gfw.profit <- raster(s_fish_gfw, "mean_scaled_profits") %>% 
   gap_fill_raster()
 r_fish_gfw.profit.subsidies <- raster(s_fish_gfw, "mean_scaled_profits_with_subsidies") %>% 
   gap_fill_raster()
@@ -281,24 +281,33 @@ p10 <- problem(r_pu_areas, features = p01_features) %>%
       add_relative_targets(0.1) %>%
       add_binary_decisions() %>%
       add_default_solver(gap = 0)
-s10 <- solve(p10)
 
-p20 <- problem(r_pu_areas, features = p01_features) %>%
+
+
+s10 <- solve(p10)
+plot(s10)
+
+p30 <- problem(r_pu_areas, features = p01_features) %>%
       add_min_set_objective() %>%
-      add_relative_targets(0.20) %>%
+      add_relative_targets(0.30) %>%
       add_binary_decisions() %>%
       add_default_solver(gap = 0)
-s20 <- solve(p20)
+s30 <- solve(p30)
+plot(s30)
 print(attr(s1, "objective"))
 
+```
 
+```{r}
 # solve the problem
 
 p01 <- problem(r_pu_areas, p01_features) %>%
-  add_max_utility_objective(budget = 0.01) %>% # 10% of total high seas area
-  add_gurobi_solver()
+    add_max_features_objective(budget = 0.1) %>%
+   add_max_utility_objective(budget = 0.01) %>% # 10% of total high seas area
+    #add_relative_targets(c(0.3, 0.3, 0)) %>%
+    add_default_solver(gap = 0) 
 
-p01_sol <- solve(p01, redo=T)
+p01_sol <- solve(p01)
 
 
 p02 <- problem(r_pu_areas, p01_features) %>%
@@ -376,7 +385,7 @@ p04 <- problem(r_pu_areas, p01_features) %>%
   add_max_utility_objective(budget = 0.1) %>%
   add_boundary_penalties(blm, 1) %>% 
   add_gurobi_solver()
-p04_sol <- solve_log(p04, redo=F)
+p04_sol <- solve(p04)
 plot(p04_sol, col = c("grey90", "darkgreen"), main = "p04 solution")
 cellStats(r_pu_areas * p04_sol, "sum")
 feature_representation(p04, p04_sol)
@@ -390,8 +399,9 @@ Maximize diversity of species and habitats, given a budget of 30% of the high se
 ```{r}
 p05 <- problem(r_pu_areas, p01_features) %>%
   add_max_utility_objective(budget = 0.3) %>%
+  add_boundary_penalties(blm, 1) %>% 
   add_gurobi_solver()
-p05_sol <- solve_log(p05, redo=F)
+p05_sol <- solve(p05)
 plot(p05_sol, col = c("grey90", "darkgreen"), main = "p05 Solution")
 cellStats(r_pu_areas * p05_sol, "sum")
 feature_representation(p05, p05_sol)
@@ -408,7 +418,7 @@ Goal: Protect habitats with strong focus on minimizing impacts to fishing profit
 p06_features <- stack(
   r_fish_gfw.profit.subsidies_inv,
   raster(s_fish_ubc_inv, "mcp_2004"),
-  rescale_raster(s_phys_seamounts),
+  rescale_raster(s_phys_seamounts[[3]]),
   rescale_raster(r_phys_vents),
   rescale_stack(s_phys_scapes))
 names(p06_features) <- c(
@@ -423,8 +433,9 @@ p06_sum <- raster::stackApply(p06_features, rep(1,nlayers(p06_features)), sum) %
 plot(p06_sum, col=cols)
 p06 <- problem(r_pu_areas, p06_features) %>%
   add_max_utility_objective(budget = 0.1) %>% # 10% of total high seas area
+  add_boundary_penalties(blm, 1) %>% 
   add_gurobi_solver()
-p06_sol <- solve_log(p06, redo=F)
+p06_sol <- solve(p06)
 plot(p06_sol, col = c("grey90", "darkgreen"), main = "p06 solution")
 cellStats(r_pu_areas * p06_sol, "sum")
 feature_representation(p06, p06_sol)
@@ -452,7 +463,7 @@ Goal: Protect habitats with strong focus on minimizing impacts to fishing profit
 p07 <- problem(r_pu_areas, p06_features) %>%
   add_max_utility_objective(budget = 0.3) %>% # 10% of total high seas area
   add_gurobi_solver()
-p07_sol <- solve_log(p07, redo=F)
+p07_sol <- solve(p07)
 plot(p07_sol, col = c("grey90", "darkgreen"), main = "p07 solution")
 cellStats(r_pu_areas * p07_sol, "sum")
 feature_representation(p07, p07_sol)
@@ -484,7 +495,7 @@ p08_features <- stack(
   r_fish_gfw.profit.subsidies_inv,
   raster(s_fish_ubc_inv, "mcp_2004"),
   raster(s_fish_ubc_inv, "mcp_2050"),
-  rescale_raster(s_phys_seamounts),
+  rescale_raster(s_phys_seamounts[[3]]),
   rescale_raster(r_phys_vents),
   rescale_stack(s_phys_scapes))
 names(p08_features) <- c(
@@ -520,9 +531,9 @@ p08_features <- stack(
     "mine_claim",
     glue("phys_scape.{1:11}"))
 p08 <- problem(r_pu_areas, p08_features) %>%
-  add_max_utility_objective(budget = 0.1) %>% # 10% of total high seas area
+  add_max_utility_objective(budget = 0.3) %>% # 10% of total high seas area
   add_gurobi_solver()
-p08_sol <- solve_log(p08, redo=F)
+p08_sol <- solve(p08)
 plot(p08_sol, col = c("grey90", "darkgreen"), main = "p08 solution")
 cellStats(r_pu_areas * p08_sol, "sum")
 feature_representation(p08, p08_sol)
@@ -566,7 +577,7 @@ p04 <- problem(r_pu_areas, p01_features) %>%
   add_max_utility_objective(budget = 0.1) %>%
   add_boundary_penalties(blm, 1) %>% 
   add_gurobi_solver()
-p04_sol <- solve_log(p04, redo=F)
+p04_sol <- solve(p04)
 plot(p04_sol, col = c("grey90", "darkgreen"), main = "p04 solution")
 cellStats(r_pu_areas * p04_sol, "sum")
 feature_representation(p04, p04_sol)
