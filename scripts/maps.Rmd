@@ -1,0 +1,80 @@
+---
+title: "abnj_countries"
+author: "Millie Chapman"
+date: "9/4/2020"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library("rnaturalearth")
+library("rnaturalearthdata")
+library(tidyverse)
+library(gridExtra)
+```
+
+```{r}
+abnj <- read_csv("../data/abnj_countries.csv")
+iso <- read_csv("../data/iso3.csv")
+sala <- read_csv("../data/Sala2018table.csv") %>%
+  remove_missing()
+```
+
+```{r}
+abnj <- abnj %>%
+  full_join(sala, by = "Country") %>%
+  full_join(iso, by = "Country") %>%
+  rename(iso_a3 = "ISO_3") %>%
+  mutate(Fishing_Days = replace_na(Fishing_Days, 0),
+         negotiations = replace_na(negotiations, 0)) %>%
+  mutate(negotiations = ifelse(negotiations == 0, "no", "yes"),
+         fishing = ifelse(Fishing_Days == 0, "no", "yes")) 
+  #mutate(fishing = ifelse(Fishing_Days>0,1,0)) %>%
+```
+
+```{r}
+world <- ne_countries(scale = "medium", returnclass = "sf") %>%
+  left_join(abnj, by = "iso_a3")
+```
+
+
+```{r}
+library(sf)
+world_points<- st_centroid(world)
+world_points <- cbind(world, st_coordinates(st_centroid(world$geometry)))
+```
+```{r}
+world_points <- world_points %>%
+  filter(negotiations == "yes")
+```
+
+```{r fig.height= 8, fig.width=10}
+abnj_map <- ggplot(data = world) +
+  geom_sf(aes(fill = log(Vessels))) +
+  scale_fill_gradient(low = "white",
+                       high = "darkblue",space = "Lab",
+                       na.value = "white", guide = "colourbar", aesthetics = "fill") +
+  geom_point(data = world_points, aes(x=X, y=Y)) + theme_minimal() +
+  #scale_fill_manual(values = c("no" = "black", "yes" = "grey")) +
+  theme(legend.position = c(0.2, 0.3))
+```
+
+barchart of 
+```{r}
+abnj_n <- abnj %>%
+  group_by(negotiations, fishing) %>%
+  count()
+```
+
+```{r}
+abnj_bar1 <- ggplot(abnj_n, aes(x = negotiations, y = n, fill = fishing)) + geom_bar(stat = "identity", position = "dodge", width = 0.5) +theme_bw() +
+  scale_fill_manual("Fishing", values = c("no" = "black", "yes" = "grey"))+ 
+  theme(legend.position = c(0.8, 0.8)) +
+  xlab("At 2017 UN Negotiations?") + ylab("Number of countries")
+```
+
+```{r}
+library(ggpubr)
+ggarrange(abnj_map, abnj_bar1, widths = c(2,1), ncol = 2, nrow = 1)
+```
+
