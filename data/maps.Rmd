@@ -16,16 +16,22 @@ library(gridExtra)
 ```{r}
 abnj <- read_csv("../data/abnj_countries.csv")
 iso <- read_csv("../data/iso3.csv")
-sala <- read_csv("../data/Sala2018table.csv") %>%
+sala_old <- read_csv("../data/Sala2018table.csv") %>%
   remove_missing()
+
+corporate_flags <- read_csv("../data/HS_fishing_vessels_with_corp_actors.csv") %>% #mutate(main_company_flag == flag) %>%
+  group_by(main_company_flag) %>% count() %>%
+  remove_missing() %>%
+  mutate(ISO_3 = main_company_flag)
 ```
 
 ```{r}
 abnj <- abnj %>%
-  full_join(sala, by = "Country") %>%
   full_join(iso, by = "Country") %>%
+  full_join(corporate_flags, by = "ISO_3") %>%
   rename(iso_a3 = "ISO_3") %>%
-  mutate(Fishing_Days = replace_na(Fishing_Days, 0),
+  mutate(Vessels = n) %>%
+  mutate(Fishing_Days = replace_na(n, 0),
          negotiations = replace_na(negotiations, 0)) %>%
   mutate(negotiations = ifelse(negotiations == 0, "no", "yes"),
          fishing = ifelse(Fishing_Days == 0, "no", "yes")) 
@@ -59,7 +65,6 @@ world_points<- st_centroid(world)
 world_points <- cbind(world, st_coordinates(st_centroid(world$geometry)))
 ```
 
-
 ```{r}
 smisna <- data.frame(adm0_a3=c("ATG", "COM", "CPV", "DMA", "FJI", "FSM",
      "GRD", "KIR", "KNA", "LCA", "MDV", "MHL", "MUS", "NRU","PLW", "SLB", 
@@ -82,7 +87,7 @@ world_points <- world_points %>%
 
 
 ```{r fig.height= 8, fig.width=10, dpi = 300}
-abnj_map <- ggplot(data = world) +
+abnj_map_fishing <- ggplot(data = world) +
   geom_sf(aes(fill = log(Vessels)), color = "#666666") +
   geom_point(data = smisna_points, aes(x=X, y=Y, size = 7, fill = log(Vessels)),  pch=21, show.legend = FALSE)+
   scale_fill_gradient(low = "lightgrey",
@@ -98,14 +103,14 @@ abnj_map <- ggplot(data = world) +
   theme(legend.key.width = unit(1.5, "cm")) +
   theme(axis.title.x=element_blank(),
         axis.title.y=element_blank())
-abnj_map
+abnj_map_fishing
 ```
 
 
 
 ```{r fig.height= 8, fig.width=10, dpi = 300}
 world %>% rename(`mining contracts` = mining)
-abnj_map <- world %>% 
+abnj_map_mining <- world %>% 
   rename(`mining contracts` = mining) %>%
   ggplot() +
   geom_sf(aes(fill = `mining contracts`), color = "#666666") +
@@ -123,22 +128,22 @@ abnj_map <- world %>%
   theme(legend.key.width = unit(1.5, "cm")) +
   theme(axis.title.x=element_blank(),
         axis.title.y=element_blank())
-abnj_map
+abnj_map_mining
 ```
 
 barchart of 
 ```{r  fig.height= 4, fig.width=3}
-abnj_n <- abnj %>%
+abnj_n <- abnj %>% select(negotiations, fishing) %>%  
   group_by(negotiations, fishing) %>%
   count()
 ```
 
 ```{r fig.height= 4, fig.width=3, dpi = 300}
-abnj_bar1 <- ggplot(abnj_n, aes(x = negotiations, y = n, fill = fishing)) + geom_bar(stat = "identity", position = "dodge", width = 0.5) +theme_bw() +
+abnj_bar_fish <- ggplot(abnj_n, aes(x = negotiations, y = n, fill = fishing)) + geom_bar(stat = "identity", position = "dodge", width = 0.5) +theme_bw() +
   scale_fill_manual("Fishing", values = c("no" = "grey", "yes" = "darkblue"))+ 
   theme(legend.position = c(0.8, 0.8)) +
   xlab("At UNCLOS August 2019") + ylab("Number of countries")
-abnj_bar1
+abnj_bar_fish
 ```
 
 barchart of 
@@ -146,16 +151,39 @@ barchart of
 abnj_m <- abnj %>%
   mutate(mining = ifelse(mining >0,"yes","no")) %>%
   mutate(mining = replace_na(mining, "no")) %>%
+  select(negotiations, mining) %>%  
   group_by(negotiations, mining) %>%
   count()
 ```
 
 ```{r fig.height= 4, fig.width=3, dpi = 300}
-abnj_bar1 <- ggplot(abnj_m, aes(x = negotiations, y = n, fill = mining)) + geom_bar(stat = "identity", position = "dodge", width = 0.5) +theme_bw() +
+abnj_bar_mining <- ggplot(abnj_m, aes(x = negotiations, y = n, fill = mining)) + geom_bar(stat = "identity", position = "dodge", width = 0.5) +theme_bw() +
   scale_fill_manual("Mining", values = c("no" = "grey", "yes" = "darkred"))+ 
   theme(legend.position = c(0.8, 0.8)) +
   xlab("At UNCLOS August 2019") + ylab("Number of countries")
-abnj_bar1
+abnj_bar_mining
+```
+
+```{r}
+abnj_map_fishing <- abnj_map_fishing + labs(tag = element_text("a)")) +
+      theme(plot.tag = element_text(face="bold", size = 16))
+
+abnj_bar_fish<- abnj_bar_fish + labs(tag = element_text("b)")) +
+      theme(plot.tag = element_text(face="bold", size = 16))
+
+abnj_map_mining <- abnj_map_mining + labs(tag = element_text("c)")) +
+      theme(plot.tag = element_text(face="bold", size = 16))
+
+abnj_bar_mining <- abnj_bar_mining + labs(tag = element_text("d)")) +
+      theme(plot.tag = element_text(face="bold", size = 16))
+```
+
+```{r fig.width= 14.5, fig.height=12, dpi= 500}
+library(gridExtra)
+
+
+grid.arrange(abnj_map_fishing,  abnj_bar_fish, abnj_map_mining, abnj_bar_mining, ncol = 6, 
+             layout_matrix = rbind(c(1,1,1,1,2,2), c(3,3,3,3,4,4)))
 ```
 
 
